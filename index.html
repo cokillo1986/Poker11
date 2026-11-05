@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Hundir la Flota PRO - Real</title>
+<style>
+*{box-sizing:border-box}
+body{margin:0;font-family:'Segoe UI',Arial;background:radial-gradient(ellipse at top,#0a2a4a 0%,#050f1f 70%);color:#fff;text-align:center;min-height:100vh}
+.top{background:linear-gradient(180deg,#000,#0a1628);padding:14px;font-weight:900;font-size:22px;border-bottom:3px solid #00c6ff;letter-spacing:1px}
+.top span{color:#00c6ff}
+.box{max-width:520px;margin:10px auto;padding:0 10px}
+.card{background:linear-gradient(180deg,#1a3355,#12253f);border-radius:18px;padding:14px;border:1px solid #2a5a9a;box-shadow:0 10px 30px rgba(0,0,0,.5)}
+input{width:100%;padding:13px;border-radius:12px;border:1px solid #2a5a9a;background:#050f1f;color:#fff;font-size:16px;margin:7px 0}
+.btn{width:100%;padding:14px;border:none;border-radius:12px;font-weight:900;font-size:16px;margin:6px 0;cursor:pointer;box-shadow:0 4px 12px rgba(0,0,0,.4)}
+.gold{background:linear-gradient(180deg,#ffd700,#f5a623);color:#000}.blue{background:linear-gradient(180deg,#3b82f6,#1d4ed8);color:#fff}.dark{background:#2a3a55;color:#fff}.green{background:linear-gradient(180deg,#22c55e,#15803d);color:#fff}.red{background:linear-gradient(180deg,#ef4444,#b91c1c);color:#fff}
+.tablero{display:grid;grid-template-columns:repeat(8,1fr);gap:4px;background:linear-gradient(180deg,#0e4a7a,#083a66);padding:8px;border-radius:14px;margin:10px 0;box-shadow:inset 0 0 20px rgba(0,0,0,.5)}
+.celda{aspect-ratio:1;background:linear-gradient(135deg,#1e7ac4,#1565a8);border-radius:8px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;overflow:hidden;border:1px solid rgba(255,255,255,.15)}
+.celda::before{content:"";position:absolute;inset:0;background:radial-gradient(circle at 30% 30%,rgba(255,255,255,.25),transparent 60%);pointer-events:none}
+.celda:hover{filter:brightness(1.3)}
+.celda.agua{background:linear-gradient(135deg,#0e4a7a,#0a365e)}
+.celda.fallo{background:#0a365e}
+.celda.tocado{background:radial-gradient(circle,#ff6b00,#b91c1c);animation:shake .3s}
+.celda.hundido{background:radial-gradient(circle,#1f2937,#000)}
+.celda.barco{background:linear-gradient(135deg,#3a5a2a,#1a2e12)}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-2px)}75%{transform:translateX(2px)}}
+@keyframes ola{0%,100%{transform:translateY(0)}50%{transform:translateY(-2px)}}
+@keyframes fuego{0%{transform:scale(1);opacity:1}100%{transform:scale(1.4);opacity:.6}}
+@keyframes humo{0%{transform:translateY(0) scale(.8);opacity:.8}100%{transform:translateY(-12px) scale(1.4);opacity:0}}
+.explosion{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:22px;animation:fuego .5s infinite alternate}
+.humo{position:absolute;top:2px;right:4px;width:10px;height:10px;background:#888;border-radius:50%;animation:humo 1s infinite}
+.marcador{display:flex;gap:8px;margin:8px 0}
+.marc{flex:1;background:#000;border-radius:12px;padding:10px;border:1px solid #2a5a9a}
+.marc b{font-size:20px;color:#ffd700}
+.barcosRow{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;margin:8px 0}
+.barcoBtn{background:#0a1a2e;border:2px solid #2a5a9a;border-radius:12px;padding:8px 6px;cursor:pointer;color:#fff;font-size:11px;width:92px}
+.barcoBtn.sel{border-color:#ffd700;background:#3a2a00;box-shadow:0 0 12px #ffd700}
+.barcoBtn.puesto{opacity:.3;filter:grayscale(1)}
+.barcoBtn svg{width:100%;height:28px}
+.tapa{background:#000;border:2px dashed #ffd700;border-radius:16px;padding:22px 10px;margin:10px 0}
+.shipCard{background:rgba(255,255,255,.05);border-radius:12px;padding:8px;margin:6px 0;text-align:left}
+</style></head><body>
+<div class="top">⚓ HUNDIR LA <span>FLOTA PRO</span></div>
+
+<div id="inicio" class="box"><div class="card">
+<h2 style="margin:0">Batalla Naval Real • 2 Jugadores</h2>
+<p style="color:#a8c8e8;font-size:13px">Sin conexión • Barcos en 3D • Sonido de guerra</p>
+<input id="n1" placeholder="Capitán 1" value="Capitán 1">
+<input id="n2" placeholder="Capitán 2" value="Capitán 2">
+<button class="btn gold" onclick="empezar()">⚓ EMPEZAR BATALLA NAVAL</button>
+<div class="shipCard"><b>🚢 TU FLOTA:</b><br>Portaaviones 4 casillas • Acorazado 3 • Crucero 3 • Destructor 2 • Patrulla 2</div>
+</div></div>
+
+<div id="juego" class="box" style="display:none">
+<div class="marcador"><div class="marc"><div id="nombre1">J1</div><b id="puntos1">0/5</b><div style="font-size:11px">Hundidos</div></div><div class="marc" style="background:#ffd700;color:#000"><div>TURNO</div><b id="turnoTxt" style="color:#000">J1</b></div><div class="marc"><div id="nombre2">J2</div><b id="puntos2">0/5</b><div style="font-size:11px">Hundidos</div></div></div>
+<p id="mensaje" style="color:#ffe27a;font-weight:700;min-height:22px"></p>
+<div id="tapa" class="tapa" style="display:none">
+<h2 style="margin:0">🙈 PÁSALE EL MÓVIL A</h2>
+<h1 id="siguienteJugador" style="color:#00c6ff;margin:8px 0">Jugador</h1>
+<p style="color:#aaa" id="textoTapa">No mires</p>
+<button class="btn green" onclick="mostrarPantalla()">👀 SOY YO, VER MI TABLERO</button>
+</div>
+<div id="colocar" class="card" style="display:none">
+<h3 style="margin:0">⚓ <span id="colocarQuien"></span>, coloca tu flota</h3>
+<p style="color:#a8c8e8;font-size:12px">Toca un barco y luego una casilla. GIRAR para vertical.</p>
+<div class="barcosRow" id="barcosBtns"></div>
+<button class="btn dark" onclick="girar()">🔄 GIRAR: <span id="dirTxt">HORIZONTAL ➡️</span></button>
+<div class="tablero" id="tabColocar"></div>
+<button class="btn gold" onclick="confirmarColocacion()">✅ LISTO, TAPAR Y PASAR</button>
+</div>
+<div id="batalla" class="card" style="display:none">
+<p style="margin:0;font-size:12px;color:#a8c8e8">🎯 DISPARA AL ENEMIGO - <span id="batallaQuien" style="color:#fff;font-weight:900"></span></p>
+<div class="tablero" id="tabAtaque"></div>
+<p style="font-size:12px;color:#a8c8e8">🛡️ TU FLOTA - Si te hunden, sale humo</p>
+<div class="tablero" id="tabPropio"></div>
+<button class="btn dark" onclick="pasarTurno()">📱 PASAR MÓVIL Y TAPAR</button>
+</div>
+<div id="fin" class="card" style="display:none"><h1 id="ganadorTxt" style="color:#ffd700"></h1><p id="detalleFin"></p><button class="btn gold" onclick="location.reload()">🔁 NUEVA PARTIDA</button></div>
+</div>
+
+<script>
+let nombres=["Capitán 1","Capitán 2"], turnoColocar=0, turnoBatalla=0;
+let jugadores=[{tablero:Array(64).fill(null), barcos:[], disparos:new Set()},{tablero:Array(64).fill(null), barcos:[], disparos:new Set()}];
+let barcoSel=0, horizontal=true;
+const FLOTA=[
+ {nombre:"Portaaviones", tam:4, color:"#3b3f4a", svg:'<svg viewBox="0 0 100 30"><rect x="5" y="12" width="90" height="10" rx="4" fill="#3b3f4a"/><rect x="15" y="5" width="30" height="8" rx="2" fill="#6b7280"/><circle cx="20" cy="9" r="2" fill="#ffd700"/><circle cx="30" cy="9" r="2" fill="#ffd700"/><path d="M5 22 L2 28 L95 28 L90 22 Z" fill="#1f2937"/></svg>'},
+ {nombre:"Acorazado", tam:3, color:"#4a5568", svg:'<svg viewBox="0 0 80 30"><rect x="5" y="12" width="70" height="10" rx="4" fill="#4a5568"/><rect x="20" y="5" width="20" height="8" rx="2" fill="#2d3748"/><rect x="45" y="7" width="8" height="10" rx="1" fill="#1a202c"/><circle cx="30" cy="9" r="2" fill="#ff6b00"/><path d="M5 22 L2 28 L75 28 L70 22 Z" fill="#1a202c"/></svg>'},
+ {nombre:"Crucero", tam:3, color:"#2d6a4f", svg:'<svg viewBox="0 0 80 30"><rect x="5" y="12" width="70" height="10" rx="4" fill="#2d6a4f"/><rect x="15" y="6" width="25" height="7" rx="2" fill="#40916c"/><rect x="50" y="8" width="6" height="8" fill="#1b4332"/><path d="M5 22 L2 28 L75 28 L70 22 Z" fill="#081c15"/></svg>'},
+ {nombre:"Destructor", tam:2, color:"#7c2d12", svg:'<svg viewBox="0 0 60 30"><rect x="5" y="12" width="50" height="9" rx="4" fill="#7c2d12"/><rect x="15" y="6" width="15" height="7" rx="2" fill="#9a3412"/><circle cx="22" cy="9" r="2" fill="#ffd700"/><path d="M5 21 L2 28 L55 28 L50 21 Z" fill="#431407"/></svg>'},
+ {nombre:"Patrulla", tam:2, color:"#1e40af", svg:'<svg viewBox="0 0 60 30"><rect x="8" y="13" width="44" height="8" rx="4" fill="#1e40af"/><rect x="20" y="7" width="10" height="7" rx="2" fill="#3b82f6"/><path d="M8 21 L5 28 L52 28 L50 21 Z" fill="#172554"/></svg>'}
+];
+let audioCtx=null;
+function sonido(tipo){
+  try{
+    if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)();
+    if(audioCtx.state==='suspended') audioCtx.resume();
+    let t=audioCtx.currentTime;
+    if(tipo==="colocar"){ let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sine'; o.frequency.value=500; g.gain.setValueAtTime(0.15,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.15); o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+0.15); }
+    else if(tipo==="disparo"){ let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(900,t); o.frequency.exponentialRampToValueAtTime(80,t+0.45); g.gain.setValueAtTime(0.2,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.45); o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+0.45); }
+    else if(tipo==="tocado"){ [0,0.12,0.24].forEach((d,i)=>{ let tt=t+d; let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='square'; o.frequency.value=220-i*40; g.gain.setValueAtTime(0.22,tt); g.gain.exponentialRampToValueAtTime(0.001,tt+0.18); o.connect(g); g.connect(audioCtx.destination); o.start(tt); o.stop(tt+0.18); }); }
+    else if(tipo==="fallo"){ let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(600,t); o.frequency.exponentialRampToValueAtTime(180,t+0.3); g.gain.setValueAtTime(0.12,t); g.gain.exponentialRampToValueAtTime(0.001,t+0.3); o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+0.3); }
+    else if(tipo==="hundido"){ [523,659,784,1046,784,523].forEach((f,i)=>{ let tt=t+i*0.15; let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.value=f; g.gain.setValueAtTime(0.16,tt); g.gain.exponentialRampToValueAtTime(0.001,tt+0.3); o.connect(g); g.connect(audioCtx.destination); o.start(tt); o.stop(tt+0.3); }); }
+  }catch(e){}
+}
+function shipSVG(idx, vertical=false){
+  // Dibuja un trozo de barco según su posición dentro del barco
+  let b=FLOTA[idx];
+  if(!vertical) return '<svg viewBox="0 0 40 30" style="width:100%;height:100%"><rect x="2" y="10" width="36" height="12" rx="5" fill="'+b.color+'"/><rect x="12" y="4" width="16" height="7" rx="2" fill="#ffffff" opacity="0.9"/><rect x="15" y="6" width="10" height="3" rx="1" fill="#1f2937"/><path d="M2 22 L0 29 L38 29 L36 22 Z" fill="#111827"/></svg>';
+  return '<svg viewBox="0 0 30 40" style="width:100%;height:100%"><rect x="8" y="2" width="14" height="36" rx="5" fill="'+b.color+'"/><rect x="11" y="12" width="8" height="16" rx="2" fill="#ffffff" opacity="0.9"/><circle cx="15" cy="16" r="2" fill="#1f2937"/></svg>';
+}
+function empezar(){ nombres[0]=document.getElementById('n1').value.trim()||"Capitán 1"; nombres[1]=document.getElementById('n2').value.trim()||"Capitán 2"; document.getElementById('inicio').style.display='none'; document.getElementById('juego').style.display='block'; document.getElementById('nombre1').innerText=nombres[0]; document.getElementById('nombre2').innerText=nombres[1]; mostrarColocar(0); }
+function mostrarColocar(idx){ turnoColocar=idx; barcoSel=0; horizontal=true; jugadores[idx].tablero=Array(64).fill(null); jugadores[idx].barcos=[]; document.getElementById('colocar').style.display='block'; document.getElementById('batalla').style.display='none'; document.getElementById('tapa').style.display='none'; document.getElementById('colocarQuien').innerText=nombres[idx]; document.getElementById('dirTxt').innerText="HORIZONTAL ➡️"; let cont=document.getElementById('barcosBtns'); cont.innerHTML=''; FLOTA.forEach((b,i)=>{ let btn=document.createElement('button'); btn.className='barcoBtn'+(i===0?' sel':''); btn.id='barcoBtn'+i; btn.innerHTML=b.svg+'<br>'+b.nombre+' ('+b.tam+')'; btn.onclick=()=>{ if(btn.classList.contains('puesto')) return; barcoSel=i; document.querySelectorAll('.barcoBtn').forEach(x=>x.classList.remove('sel')); btn.classList.add('sel'); }; cont.appendChild(btn); }); pintarColocar(); }
+function girar(){ horizontal=!horizontal; document.getElementById('dirTxt').innerText=horizontal?"HORIZONTAL ➡️":"VERTICAL ⬇️"; }
+function pintarColocar(){ let tab=document.getElementById('tabColocar'); tab.innerHTML=''; for(let i=0;i<64;i++){ let c=document.createElement('div'); let v=jugadores[turnoColocar].tablero[i]; c.className='celda'+(v!==null?' barco':''); if(v!==null){ let barco=jugadores[turnoColocar].barcos.find(b=>b.celdas.includes(i)); let idx=FLOTA.findIndex(f=>f.nombre===barco.nombre); c.innerHTML=shipSVG(idx, barco.vertical); } c.onclick=()=>colocarBarco(i); tab.appendChild(c); } document.getElementById('mensaje').innerText="Coloca: "+FLOTA[barcoSel].nombre+" ("+FLOTA[barcoSel].tam+" casillas) - "+(horizontal?"Horizontal":"Vertical"); }
+function colocarBarco(pos){ if(document.getElementById('barcoBtn'+barcoSel).classList.contains('puesto')) return alert("Ese barco ya está puesto"); let tam=FLOTA[barcoSel].tam, fila=Math.floor(pos/8), col=pos%8, celdas=[]; for(let k=0;k<tam;k++){ let p=horizontal?pos+k:pos+k*8; if(horizontal && Math.floor(p/8)!==fila) return alert("No cabe ahí"); if(!horizontal && p>=64) return alert("No cabe ahí"); if(jugadores[turnoColocar].tablero[p]!==null) return alert("Ahí ya hay un barco"); celdas.push(p); } celdas.forEach(p=>jugadores[turnoColocar].tablero[p]=barcoSel); jugadores[turnoColocar].barcos.push({nombre:FLOTA[barcoSel].nombre, celdas:celdas, hundido:false, vertical:!horizontal}); document.getElementById('barcoBtn'+barcoSel).classList.add('puesto'); sonido("colocar"); for(let i=0;i<FLOTA.length;i++) if(!document.getElementById('barcoBtn'+i).classList.contains('puesto')){ barcoSel=i; document.querySelectorAll('.barcoBtn').forEach(x=>x.classList.remove('sel')); document.getElementById('barcoBtn'+i).classList.add('sel'); break; } pintarColocar(); }
+function confirmarColocacion(){ if(jugadores[turnoColocar].barcos.length<5) return alert("Te faltan barcos"); if(turnoColocar===0){ document.getElementById('colocar').style.display='none'; mostrarTapa(1,"Coloca tu flota, "+nombres[1],()=>mostrarColocar(1)); } else { turnoBatalla=0; document.getElementById('colocar').style.display='none'; mostrarTapa(0,"Empieza la batalla, dispara tú primero",()=>mostrarBatalla()); } }
+function mostrarTapa(idx,texto,cb){ window._cb=cb; document.getElementById('tapa').style.display='block'; document.getElementById('colocar').style.display='none'; document.getElementById('batalla').style.display='none'; document.getElementById('siguienteJugador').innerText=nombres[idx]; document.getElementById('textoTapa').innerText=texto; document.getElementById('turnoTxt').innerText=nombres[idx]; }
+function mostrarPantalla(){ document.getElementById('tapa').style.display='none'; if(window._cb) window._cb(); }
+function mostrarBatalla(){ document.getElementById('batalla').style.display='block'; document.getElementById('batallaQuien').innerText=nombres[turnoBatalla]; document.getElementById('mensaje').innerText="🎯 "+nombres[turnoBatalla]+", dispara al tablero enemigo"; pintarBatalla(); }
+function pintarBatalla(){
+  let enemigo=jugadores[1-turnoBatalla], yo=jugadores[turnoBatalla];
+  let tab=document.getElementById('tabAtaque'); tab.innerHTML='';
+  for(let i=0;i<64;i++){ let c=document.createElement('div'); let disparado=yo.disparos.has(i); let esBarco=enemigo.tablero[i]!==null; let tocado=disparado&&esBarco; let hundido=false; if(tocado){ let b=enemigo.barcos.find(b=>b.celdas.includes(i)); if(b&&b.hundido) hundido=true; } c.className='celda '+(disparado?(tocado?(hundido?' hundido':' tocado'):' fallo'):' agua');
+    if(tocado && hundido) c.innerHTML='<div style="font-size:18px">💀</div><div class="humo"></div>';
+    else if(tocado) c.innerHTML='<div class="explosion">🔥</div>';
+    else if(disparado) c.innerHTML='<div style="font-size:16px">💦</div>';
+    else c.innerHTML='<div style="width:8px;height:8px;background:rgba(255,255,255,.4);border-radius:50%"></div>';
+    c.onclick=()=>disparar(i); tab.appendChild(c); }
+  let tab2=document.getElementById('tabPropio'); tab2.innerHTML='';
+  for(let i=0;i<64;i++){ let c=document.createElement('div'); let v=yo.tablero[i]; let meHanDisparado=enemigo.disparos.has(i); c.className='celda '+(v!==null?(meHanDisparado?' tocado':' barco'):(meHanDisparado?' fallo':' agua'));
+    if(v!==null){ let barco=yo.barcos.find(b=>b.celdas.includes(i)); c.innerHTML= meHanDisparado ? '<div class="explosion">🔥</div>' : shipSVG(v, barco.vertical); }
+    else if(meHanDisparado) c.innerHTML='<div style="font-size:14px">💦</div>';
+    tab2.appendChild(c); }
+  document.getElementById('puntos1').innerText=jugadores[0].barcos.filter(b=>b.hundido).length+"/5";
+  document.getElementById('puntos2').innerText=jugadores[1].barcos.filter(b=>b.hundido).length+"/5";
+  document.getElementById('turnoTxt').innerText=nombres[turnoBatalla];
+}
+function disparar(pos){
+  let yo=jugadores[turnoBatalla], enemigo=jugadores[1-turnoBatalla];
+  if(yo.disparos.has(pos)) return alert("Ya disparaste ahí");
+  sonido("disparo");
+  setTimeout(()=>{
+    yo.disparos.add(pos);
+    if(enemigo.tablero[pos]!==null){
+      let barco=enemigo.barcos.find(b=>b.celdas.includes(pos));
+      let todas=barco.celdas.every(c=>yo.disparos.has(c));
+      if(todas){ barco.hundido=true; sonido("hundido"); document.getElementById('mensaje').innerText="💥 ¡HUNDIDO! Has hundido el "+barco.nombre+" de "+nombres[1-turnoBatalla]; if(enemigo.barcos.every(b=>b.hundido)){ document.getElementById('batalla').style.display='none'; document.getElementById('fin').style.display='block'; document.getElementById('ganadorTxt').innerText="🏆 "+nombres[turnoBatalla]+" HA GANADO"; document.getElementById('detalleFin').innerText="Has hundido toda la flota enemiga. ¡Almirante supremo!"; return; } alert("💥 ¡HUNDIDO! "+barco.nombre+" hundido. ¡Tira otra vez!"); }
+      else { sonido("tocado"); document.getElementById('mensaje').innerText="🔥 ¡TOCADO! Has dado a un barco. ¡Otra vez!"; alert("🔥 ¡TOCADO!"); }
+      pintarBatalla();
+    } else { sonido("fallo"); document.getElementById('mensaje').innerText="💦 Agua... Le toca a "+nombres[1-turnoBatalla]; pintarBatalla(); setTimeout(()=>{ turnoBatalla=1-turnoBatalla; pasarTurno(); },700); }
+  },400);
+}
+function pasarTurno(){ mostrarTapa(turnoBatalla,"Te toca disparar, "+nombres[turnoBatalla],()=>mostrarBatalla()); }
+</script></body></html>
