@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <html lang="es"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
-<title>BATTLESHIP PRO - Diagonal + Edición Total</title>
+<title>BATTLESHIP PRO - Arrastre Corregido</title>
 <style>
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{margin:0;font-family:'Segoe UI',system-ui;background:#02060E;color:#fff;overflow-x:hidden}
@@ -32,9 +32,9 @@ input{width:100%;padding:14px;border-radius:14px;border:1px solid #24466E;backgr
 .cell.sunk{background:radial-gradient(circle,#111827,#000)}
 .cell.ship{background:linear-gradient(135deg,#3A4A2A,#1A2E12)}
 .cell.selected{outline:3px solid #FFD700;outline-offset:-1px;z-index:3}
-.cell.dropOk{background:#22C55E!important}
+.cell.dropOk{background:#22C55E!important;box-shadow:0 0 0 2px #22C55E inset}
 .cell.dropBad{background:#EF4444!important}
-.cell.preview{background:#FFD700!important;opacity:.8}
+.cell.dragTarget{outline:3px solid #FFD700;outline-offset:-1px}
 .fire{font-size:18px;animation:fire .4s infinite alternate}
 @keyframes fire{0%{transform:scale(1)}100%{transform:scale(1.35)}}
 .smoke{position:absolute;top:1px;right:2px;width:9px;height:9px;background:#9CA3AF;border-radius:50%;animation:smokeUp 1s infinite}
@@ -49,7 +49,7 @@ input{width:100%;padding:14px;border-radius:14px;border:1px solid #24466E;backgr
 .shipCard .visual svg{width:100%;height:100%}
 .shipCard .status{font-size:11px;color:#8AA8C8}
 .toolbar{display:flex;gap:8px;flex-wrap:wrap}.toolbar .btn{flex:1;min-width:110px;padding:12px;font-size:13px}
-.radar{width:56px;height:56px;border-radius:50%;border:2px solid #22C55E;position:relative;overflow:hidden;margin:0 auto;background:radial-gradient(circle,rgba(34,197,94,.15),transparent);flex-shrink:0}
+.radar{width:56px;height:56px;border-radius:50%;border:2px solid #22C55E;position:relative;overflow:hidden;margin:0 auto;flex-shrink:0}
 .radar::before{content:"";position:absolute;inset:0;background:conic-gradient(from 0deg,rgba(34,197,94,.8),transparent 60deg);animation:spin 2s linear infinite;border-radius:50%}
 .radar::after{content:"";position:absolute;left:50%;top:50%;width:6px;height:6px;background:#22C55E;border-radius:50%;transform:translate(-50%,-50%)}
 @keyframes spin{to{transform:rotate(360deg)}}
@@ -63,67 +63,48 @@ input{width:100%;padding:14px;border-radius:14px;border:1px solid #24466E;backgr
 .orientBar button{flex:1;padding:10px 4px;border-radius:10px;border:2px solid #24466E;background:#02060E;color:#fff;font-weight:800;font-size:12px;cursor:pointer}
 .orientBar button.on{border-color:#FFD700;background:#2A2200;color:#FFD700}
 </style></head><body>
-<div class="header"><h1>BATTLESHIP <span>PRO</span></h1><p>Diagonal • Edición Total • 10x10</p></div>
+<div class="header"><h1>BATTLESHIP <span>PRO</span></h1><p>Arrastre Corregido • Diagonal • 10x10</p></div>
 
-<div id="inicio" class="box">
-<div class="card" style="margin-top:14px">
+<div id="inicio" class="box"><div class="card" style="margin-top:14px">
 <h2 style="margin:0">Conviértete en <span style="color:#FFD700">Almirante Supremo</span></h2>
-<p style="color:#9AB6D1;font-size:13px">Ahora puedes poner barcos en <b style="color:#fff">diagonal ↘️ ↙️</b> y editarlos cuanto quieras. Toca, arrastra, gira, deshaz.</p>
+<p style="color:#9AB6D1;font-size:13px">Arrastre arreglado: el barco sigue a tu dedo exactamente y se coloca donde lo sueltas. Si lo sueltas fuera, se queda donde estaba.</p>
 <label style="font-size:12px;color:#8AA8C8">CAPITÁN 1</label><input id="n1" value="Capitán 1">
 <label style="font-size:12px;color:#8AA8C8">CAPITÁN 2</label><input id="n2" value="Capitán 2">
 <button class="btn btn-gold" onclick="empezar()">⚓ ENTRAR EN BATALLA</button>
-<div style="margin-top:10px;text-align:center"><span class="chip">↔️ Horizontal</span><span class="chip">↕️ Vertical</span><span class="chip">↘️ Diagonal</span><span class="chip">↙️ Diagonal</span><span class="chip">↩️ Deshacer</span></div>
-</div>
-</div>
+</div></div>
 
 <div id="juego" class="box" style="display:none">
 <div class="topBar"><div class="player" id="cardP1"><div class="name" id="nombre1">J1</div><div class="score" id="puntos1">0 / 5</div></div><div class="turnCenter"><small>TURNO</small><b id="turnoTxt">J1</b></div><div class="player" id="cardP2"><div class="name" id="nombre2">J2</div><div class="score" id="puntos2">0 / 5</div></div></div>
 <div class="msg"><div class="dot"></div><span id="mensaje">Prepara tu flota</span><div class="radar" style="margin-left:auto"></div></div>
-
 <div id="tapa" class="tapa" style="display:none"><div style="font-size:40px">🙈</div><h2 style="color:#9AB6D1;margin:0">PÁSALE EL MÓVIL A</h2><h1 id="siguienteJugador">Jugador</h1><p id="textoTapa" style="color:#8AA8C8"></p><button class="btn btn-green" onclick="mostrarPantalla()">👀 SOY YO, VER MI TABLERO</button></div>
 
 <div id="colocar" class="card" style="display:none">
 <h3 style="margin:0">⚓ <span id="colocarQuien"></span> — Despliega tu flota</h3>
-<p style="color:#8AA8C8;font-size:12px;margin:6px 0 0">1. Elige orientación abajo &nbsp; 2. Arrastra o toca para colocar &nbsp; 3. Toca un barco colocado para moverlo / girarlo. <b style="color:#fff">Puedes editarlo TODO las veces que quieras.</b></p>
-
-<div style="margin-top:10px;font-size:12px;font-weight:800;color:#FFD700">🧭 ORIENTACIÓN PARA COLOCAR:</div>
+<p style="color:#8AA8C8;font-size:12px;margin:6px 0 0">Arrastra con el dedo: el barco te sigue. Suelta en el mar para colocarlo. Si la casilla se pone <b style="color:#22C55E">verde</b> cabe, si se pone <b style="color:#EF4444">roja</b> no cabe.</p>
+<div style="margin-top:10px;font-size:12px;font-weight:800;color:#FFD700">🧭 ORIENTACIÓN:</div>
 <div class="orientBar">
 <button id="o0" class="on" onclick="setOrient(0)">↔️ HORIZONTAL</button>
 <button id="o1" onclick="setOrient(1)">↕️ VERTICAL</button>
 <button id="o2" onclick="setOrient(2)">↘️ DIAGONAL</button>
 <button id="o3" onclick="setOrient(3)">↙️ DIAGONAL</button>
 </div>
-
 <div class="progress"><i id="progBar" style="width:0%"></i></div>
 <div style="font-size:12px;color:#8AA8C8">Progreso: <b id="progTxt" style="color:#fff">0 / 5</b> • Seleccionado: <b id="selTxt" style="color:#FFD700">Ninguno</b> • <span id="orientTxt" style="color:#00E5FF">↔️ Horizontal</span></div>
-
 <div class="fleet" id="flota"></div>
-
-<div class="toolbar">
-<button class="btn btn-dark" onclick="girarSeleccionado()">🔄 GIRAR SELECCIONADO</button>
-<button class="btn btn-dark" onclick="deshacer()">↩️ DESHACER</button>
-</div>
-<div class="toolbar" style="margin-top:8px">
-<button class="btn btn-red" onclick="quitarSeleccionado()">🗑️ QUITAR SELECCIONADO</button>
-<button class="btn btn-dark" onclick="limpiarTodo()">🧹 LIMPIAR TODO</button>
-</div>
-<div class="toolbar" style="margin-top:8px">
-<button class="btn btn-dark" onclick="colocacionAleatoria()">🎲 ALEATORIO (con diagonales)</button>
-</div>
-
+<div class="toolbar"><button class="btn btn-dark" onclick="girarSeleccionado()">🔄 GIRAR SELECCIONADO</button><button class="btn btn-dark" onclick="deshacer()">↩️ DESHACER</button></div>
+<div class="toolbar" style="margin-top:8px"><button class="btn btn-red" onclick="quitarSeleccionado()">🗑️ QUITAR SELECCIONADO</button><button class="btn btn-dark" onclick="limpiarTodo()">🧹 LIMPIAR TODO</button></div>
+<div class="toolbar" style="margin-top:8px"><button class="btn btn-dark" onclick="colocacionAleatoria()">🎲 ALEATORIO</button></div>
 <div class="boardWrap"><div class="board" id="tabColocar"></div></div>
-<div style="font-size:11px;color:#6B8AA8;text-align:center">A B C D E F G H I J • 1-10 • Los barcos diagonales se ven inclinados</div>
 <button class="btn btn-gold" onclick="confirmarColocacion()">✅ CONFIRMAR FLOTA Y TAPAR</button>
 </div>
 
 <div id="batalla" class="card" style="display:none">
-<p style="margin:0 0 6px;font-size:12px;color:#8AA8C8">🎯 CAMPO ENEMIGO — <b id="batallaQuien" style="color:#fff"></b> • Toca una casilla para disparar</p>
+<p style="margin:0 0 6px;font-size:12px;color:#8AA8C8">🎯 CAMPO ENEMIGO — <b id="batallaQuien" style="color:#fff"></b></p>
 <div class="boardWrap"><div class="board" id="tabAtaque"></div></div>
 <p style="margin:10px 0 6px;font-size:12px;color:#8AA8C8">🛡️ TU FLOTA</p>
 <div class="boardWrap"><div class="board" id="tabPropio"></div></div>
 <button class="btn btn-dark" onclick="pasarTurno()">📱 PASAR MÓVIL Y TAPAR</button>
 </div>
-
 <div id="fin" class="card" style="display:none;text-align:center"><div style="font-size:56px">🏆</div><h1 id="ganadorTxt" style="color:#FFD700;margin:6px 0"></h1><p id="detalleFin" style="color:#8AA8C8"></p><div id="statsFin" style="background:#02060E;border-radius:14px;padding:12px;font-size:13px;text-align:left"></div><button class="btn btn-gold" onclick="location.reload()" style="margin-top:12px">🔁 NUEVA BATALLA</button></div>
 </div>
 <div id="fantasma" class="ghost"></div>
@@ -131,7 +112,7 @@ input{width:100%;padding:14px;border-radius:14px;border:1px solid #24466E;backgr
 <script>
 let nombres=["Capitán 1","Capitán 2"], turnoColocar=0, turnoBatalla=0, totalDisparos=[0,0], aciertos=[0,0];
 let jugadores=[{tablero:Array(100).fill(null), barcos:[], disparos:new Set()},{tablero:Array(100).fill(null), barcos:[], disparos:new Set()}];
-let seleccionadoIdx=null, orient=0, arrastrando=null, historial=[];
+let seleccionadoIdx=null, orient=0, historial=[], drag=null;
 const ORIENTS=[{name:"↔️ Horizontal", rot:"0deg"},{name:"↕️ Vertical", rot:"90deg"},{name:"↘️ Diagonal", rot:"45deg"},{name:"↙️ Diagonal", rot:"-45deg"}];
 const FLOTA=[
  {nombre:"Portaaviones", tam:5, color:"#3B3F4A", svg:(c)=>'<svg viewBox="0 0 100 36"><rect x="2" y="14" width="96" height="13" rx="6" fill="'+c+'"/><rect x="68" y="6" width="22" height="9" rx="2" fill="#E5E7EB"/><circle cx="74" cy="10" r="2" fill="#FFD700"/><path d="M12 14 L18 6 L26 14 Z" fill="#F59E0B"/><path d="M30 14 L36 6 L44 14 Z" fill="#3B82F6"/><path d="M2 27 L0 34 L98 34 L96 27 Z" fill="#111827"/></svg>'},
@@ -142,56 +123,85 @@ const FLOTA=[
 ];
 let audioCtx=null;
 function sonido(tipo){ try{ if(!audioCtx) audioCtx=new (window.AudioContext||window.webkitAudioContext)(); if(audioCtx.state==='suspended') audioCtx.resume(); let t=audioCtx.currentTime; if(tipo==="colocar"){ let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sine'; o.frequency.value=520; g.gain.setValueAtTime(.15,t); g.gain.exponentialRampToValueAtTime(.001,t+.15); o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+.15); } else if(tipo==="disparo"){ let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sawtooth'; o.frequency.setValueAtTime(900,t); o.frequency.exponentialRampToValueAtTime(80,t+.45); g.gain.setValueAtTime(.22,t); g.gain.exponentialRampToValueAtTime(.001,t+.45); o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+.45); } else if(tipo==="tocado"){ [0,.12,.24].forEach((d,i)=>{ let tt=t+d; let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='square'; o.frequency.value=220-i*40; g.gain.setValueAtTime(.22,tt); g.gain.exponentialRampToValueAtTime(.001,tt+.18); o.connect(g); g.connect(audioCtx.destination); o.start(tt); o.stop(tt+.18); }); if(navigator.vibrate) navigator.vibrate(120); } else if(tipo==="fallo"){ let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.type='sine'; o.frequency.setValueAtTime(600,t); o.frequency.exponentialRampToValueAtTime(180,t+.3); g.gain.setValueAtTime(.12,t); g.gain.exponentialRampToValueAtTime(.001,t+.3); o.connect(g); g.connect(audioCtx.destination); o.start(t); o.stop(t+.3); } else if(tipo==="hundido"){ [523,659,784,1046,784,523].forEach((f,i)=>{ let tt=t+i*.15; let o=audioCtx.createOscillator(), g=audioCtx.createGain(); o.frequency.value=f; g.gain.setValueAtTime(.16,tt); g.gain.exponentialRampToValueAtTime(.001,tt+.3); o.connect(g); g.connect(audioCtx.destination); o.start(tt); o.stop(tt+.3); }); if(navigator.vibrate) navigator.vibrate([200,100,200,100,300]); } }catch(e){} }
-function shipCellSVG(idx, o){
-  let c=FLOTA[idx].color;
-  let rot = o===0?"0deg": o===1?"90deg": o===2?"45deg":"-45deg";
-  return '<svg viewBox="0 0 40 36" style="width:100%;height:100%;transform:rotate('+rot+')"><rect x="2" y="12" width="36" height="13" rx="5" fill="'+c+'"/><rect x="12" y="5" width="16" height="8" rx="2" fill="#fff" opacity=".9"/><rect x="15" y="7" width="10" height="3" rx="1" fill="#1F2937"/><path d="M2 25 L0 34 L38 34 L36 25 Z" fill="#111827"/></svg>';
-}
-function guardarHistorial(){ historial.push(JSON.stringify({tablero:jugadores[turnoColocar].tablero, barcos:jugadores[turnoColocar].barcos, sel:seleccionadoIdx})); if(historial.length>30) historial.shift(); }
-function deshacer(){ if(historial.length===0) return alert("No hay nada que deshacer"); let ultimo=JSON.parse(historial.pop()); jugadores[turnoColocar].tablero=ultimo.tablero; jugadores[turnoColocar].barcos=ultimo.barcos; seleccionadoIdx=null; document.getElementById('selTxt').innerText="Ninguno"; renderFlota(); pintarColocar(); actualizarProgreso(); }
+function shipCellSVG(idx, o){ let c=FLOTA[idx].color; let rot=o===0?"0deg":o===1?"90deg":o===2?"45deg":"-45deg"; return '<svg viewBox="0 0 40 36" style="width:100%;height:100%;transform:rotate('+rot+')"><rect x="2" y="12" width="36" height="13" rx="5" fill="'+c+'"/><rect x="12" y="5" width="16" height="8" rx="2" fill="#fff" opacity=".9"/><rect x="15" y="7" width="10" height="3" rx="1" fill="#1F2937"/><path d="M2 25 L0 34 L38 34 L36 25 Z" fill="#111827"/></svg>'; }
+function guardarHistorial(){ historial.push(JSON.stringify({tablero:jugadores[turnoColocar].tablero, barcos:jugadores[turnoColocar].barcos})); if(historial.length>30) historial.shift(); }
+function deshacer(){ if(historial.length===0) return alert("No hay nada que deshacer"); let u=JSON.parse(historial.pop()); jugadores[turnoColocar].tablero=u.tablero; jugadores[turnoColocar].barcos=u.barcos; seleccionadoIdx=null; document.getElementById('selTxt').innerText="Ninguno"; renderFlota(); pintarColocar(); actualizarProgreso(); }
 function setOrient(o){ orient=o; document.querySelectorAll('.orientBar button').forEach((b,i)=>b.classList.toggle('on', i===o)); document.getElementById('orientTxt').innerText=ORIENTS[o].name; }
 function empezar(){ nombres[0]=document.getElementById('n1').value.trim()||"Capitán 1"; nombres[1]=document.getElementById('n2').value.trim()||"Capitán 2"; document.getElementById('inicio').style.display='none'; document.getElementById('juego').style.display='block'; document.getElementById('nombre1').innerText=nombres[0]; document.getElementById('nombre2').innerText=nombres[1]; mostrarColocar(0); }
-function mostrarColocar(idx){ turnoColocar=idx; seleccionadoIdx=null; orient=0; historial=[]; setOrient(0); jugadores[idx].tablero=Array(100).fill(null); jugadores[idx].barcos=[]; document.getElementById('colocar').style.display='block'; document.getElementById('batalla').style.display='none'; document.getElementById('tapa').style.display='none'; document.getElementById('colocarQuien').innerText=nombres[idx]; document.getElementById('selTxt').innerText="Ninguno"; renderFlota(); pintarColocar(); actualizarProgreso(); }
+function mostrarColocar(idx){ turnoColocar=idx; seleccionadoIdx=null; orient=0; historial=[]; drag=null; setOrient(0); jugadores[idx].tablero=Array(100).fill(null); jugadores[idx].barcos=[]; document.getElementById('colocar').style.display='block'; document.getElementById('batalla').style.display='none'; document.getElementById('tapa').style.display='none'; document.getElementById('colocarQuien').innerText=nombres[idx]; document.getElementById('selTxt').innerText="Ninguno"; renderFlota(); pintarColocar(); actualizarProgreso(); }
 function actualizarProgreso(){ let n=jugadores[turnoColocar].barcos.length; document.getElementById('progBar').style.width=(n/5*100)+'%'; document.getElementById('progTxt').innerText=n+" / 5"; }
-function renderFlota(){ let cont=document.getElementById('flota'); cont.innerHTML=''; FLOTA.forEach((b,i)=>{ let barcoIdx=jugadores[turnoColocar].barcos.findIndex(x=>x.flotaIdx===i); let puesto=barcoIdx!==-1; let div=document.createElement('div'); div.className='shipCard'+(puesto?' done':'')+(seleccionadoIdx!==null && jugadores[turnoColocar].barcos[seleccionadoIdx] && jugadores[turnoColocar].barcos[seleccionadoIdx].flotaIdx===i?' sel':''); div.innerHTML='<div style="display:flex;justify-content:space-between"><span class="name">'+b.nombre+'</span><span class="size">'+b.tam+'</span></div><div class="visual" style="transform:rotate('+ORIENTS[orient].rot+')">'+b.svg(b.color)+'</div><div class="status">'+(puesto?'✓ Colocado — toca para mover / girar':'↕ Arrastra o toca para colocar')+'</div>'; div.addEventListener('pointerdown', e=>{ if(puesto) seleccionarBarco(barcoIdx); else iniciarArrastre(e,i,false,null); }); div.addEventListener('click', ()=>{ if(!puesto){ // Tocar barco de flota = seleccionarlo para colocar con toque
-        document.querySelectorAll('.shipCard').forEach(x=>x.classList.remove('sel')); div.classList.add('sel'); div.dataset.selFlota=i; document.getElementById('selTxt').innerText=b.nombre+" listo — toca una casilla del mar"; div.dataset.flotaSel="1"; window._flotaSel=i; } }); cont.appendChild(div); }); }
-function seleccionarBarco(idx){ seleccionadoIdx=idx; let b=jugadores[turnoColocar].barcos[idx]; if(!b){ seleccionadoIdx=null; return; } orient=b.orient; setOrient(orient); document.getElementById('selTxt').innerText=b.nombre+" seleccionado — toca otra casilla para moverlo o GIRAR"; window._flotaSel=null; renderFlota(); pintarColocar(); }
-function celdasPara(flotaIdx, pos, o){
-  let tam=FLOTA[flotaIdx].tam, fila=Math.floor(pos/10), col=pos%10, celdas=[];
-  for(let k=0;k<tam;k++){
-    let p, f, c;
-    if(o===0){ p=pos+k; f=fila; c=col+k; if(f!==fila) return null; }
-    if(o===1){ p=pos+k*10; f=fila+k; c=col; }
-    if(o===2){ p=pos+k*11; f=fila+k; c=col+k; }
-    if(o===3){ p=pos+k*9; f=fila+k; c=col-k; }
-    if(f<0||f>=10||c<0||c>=10||p<0||p>=100) return null;
-    // Verificar que p coincide con fila/col calculada (evita salto de fila)
-    if(Math.floor(p/10)!==f || p%10!==c) return null;
-    celdas.push(p);
+function renderFlota(){ let cont=document.getElementById('flota'); cont.innerHTML=''; FLOTA.forEach((b,i)=>{ let barcoIdx=jugadores[turnoColocar].barcos.findIndex(x=>x.flotaIdx===i); let puesto=barcoIdx!==-1; let div=document.createElement('div'); div.className='shipCard'+(puesto?' done':'')+(seleccionadoIdx!==null && jugadores[turnoColocar].barcos[seleccionadoIdx] && jugadores[turnoColocar].barcos[seleccionadoIdx].flotaIdx===i?' sel':''); div.innerHTML='<div style="display:flex;justify-content:space-between"><span class="name">'+b.nombre+'</span><span class="size">'+b.tam+'</span></div><div class="visual" style="transform:rotate('+ORIENTS[orient].rot+')">'+b.svg(b.color)+'</div><div class="status">'+(puesto?'✓ Colocado — toca para seleccionar':'↕ Arrastra al mar')+'</div>'; div.addEventListener('pointerdown', e=>{ if(puesto){ seleccionarBarco(barcoIdx); return; } startDrag(e, i, false, null, null); }); div.addEventListener('click', e=>{ if(!puesto){ window._flotaSel=i; document.getElementById('selTxt').innerText=b.nombre+" listo — toca una casilla del mar para colocarlo"; document.querySelectorAll('.shipCard').forEach(x=>x.classList.remove('sel')); div.classList.add('sel'); } }); cont.appendChild(div); }); }
+function seleccionarBarco(idx){ seleccionadoIdx=idx; let b=jugadores[turnoColocar].barcos[idx]; if(!b){ seleccionadoIdx=null; return; } orient=b.orient; setOrient(orient); document.getElementById('selTxt').innerText=b.nombre+" seleccionado — arrástralo o toca otra casilla para moverlo"; window._flotaSel=null; renderFlota(); pintarColocar(); }
+function celdasPara(flotaIdx, pos, o){ let tam=FLOTA[flotaIdx].tam, fila=Math.floor(pos/10), col=pos%10, celdas=[]; for(let k=0;k<tam;k++){ let p,f,c; if(o===0){ p=pos+k; f=fila; c=col+k; } if(o===1){ p=pos+k*10; f=fila+k; c=col; } if(o===2){ p=pos+k*11; f=fila+k; c=col+k; } if(o===3){ p=pos+k*9; f=fila+k; c=col-k; } if(f<0||f>=10||c<0||c>=10||p<0||p>=100) return null; if(Math.floor(p/10)!==f||p%10!==c) return null; celdas.push(p); } return celdas; }
+function puedeColocar(flotaIdx,pos,o,ignorar){ let celdas=celdasPara(flotaIdx,pos,o); if(!celdas) return false; for(let p of celdas){ let v=jugadores[turnoColocar].tablero[p]; if(v!==null){ let bIdx=jugadores[turnoColocar].barcos.findIndex(b=>b.celdas.includes(p)); if(bIdx!==ignorar) return false; } } return true; }
+// === ARRASTRE CORREGIDO ===
+function getCellFromPoint(x,y){ let fant=document.getElementById('fantasma'); let old=fant.style.display; fant.style.display='none'; let el=document.elementFromPoint(x,y); fant.style.display=old; let celda=el&&el.closest?el.closest('.cell'):null; if(!celda) return null; if(celda.closest('#tabColocar')===null) return null; return parseInt(celda.dataset.idx); }
+function startDrag(e, flotaIdx, desdeTablero, barcoIdx, startCell){
+  // No iniciar drag si es un click simple: esperamos a que se mueva 8px
+  let startX=e.clientX, startY=e.clientY, started=false;
+  let origenCelda = startCell; // si viene del tablero, la casilla donde tocaste
+  let ancla = null; // casilla inicial del barco (celdas[0])
+  if(desdeTablero){ let b=jugadores[turnoColocar].barcos[barcoIdx]; if(b) ancla=b.celdas[0]; }
+  drag={flotaIdx, desdeTablero, barcoIdx, startX, startY, origenCelda, ancla, started, lastTarget:null};
+  let fant=document.getElementById('fantasma');
+  function onMove(ev){
+    let dx=ev.clientX-startX, dy=ev.clientY-startY;
+    if(!started && Math.sqrt(dx*dx+dy*dy)<8) return;
+    if(!started){ started=true; drag.started=true; fant.innerHTML=FLOTA[flotaIdx].svg(FLOTA[flotaIdx].color); fant.style.setProperty('--rot', ORIENTS[orient].rot); fant.style.display='block'; }
+    fant.style.left=ev.clientX+'px'; fant.style.top=ev.clientY+'px';
+    document.querySelectorAll('.cell').forEach(c=>c.classList.remove('dropOk','dropBad','dragTarget'));
+    let hoverCell=getCellFromPoint(ev.clientX, ev.clientY);
+    if(hoverCell===null){ drag.lastTarget=null; return; }
+    let target;
+    if(drag.desdeTablero){
+      // CORRECCIÓN CLAVE: calculamos cuánto se ha movido el dedo respecto a la casilla donde tocaste
+      // y aplicamos ese mismo desplazamiento al ancla del barco, no ponemos el barco donde está el dedo
+      let r1=Math.floor(origenCelda/10), c1=origenCelda%10;
+      let r2=Math.floor(hoverCell/10), c2=hoverCell%10;
+      let dr=r2-r1, dc=c2-c1;
+      let anclaR=Math.floor(ancla/10)+dr, anclaC=(ancla%10)+dc;
+      if(anclaR<0||anclaR>=10||anclaC<0||anclaC>=10){ drag.lastTarget=null; return; }
+      target=anclaR*10+anclaC;
+    } else {
+      target=hoverCell; // desde la flota, la punta va donde está el dedo
+    }
+    drag.lastTarget=target;
+    let ok=puedeColocar(flotaIdx, target, orient, drag.desdeTablero?barcoIdx:null);
+    // Pintar preview en todas las casillas que ocuparía
+    let celdas=celdasPara(flotaIdx, target, orient);
+    if(celdas){ celdas.forEach(p=>{ let el=document.querySelector('#tabColocar .cell[data-idx="'+p+'"]'); if(el) el.classList.add(ok?'dropOk':'dropBad'); }); }
+    let elTarget=document.querySelector('#tabColocar .cell[data-idx="'+target+'"]'); if(elTarget) elTarget.classList.add('dragTarget');
   }
-  return celdas;
+  function onUp(ev){
+    document.removeEventListener('pointermove', onMove); document.removeEventListener('pointerup', onUp);
+    fant.style.display='none'; document.querySelectorAll('.cell').forEach(c=>c.classList.remove('dropOk','dropBad','dragTarget'));
+    let wasDrag=drag && drag.started; let fIdx=drag?drag.flotaIdx:null; let desde=drag?drag.desdeTablero:false; let bIdx=drag?drag.barcoIdx:null; let target=drag?drag.lastTarget:null; drag=null;
+    if(wasDrag){
+      if(target!==null){
+        if(desde) intentarMover(bIdx, target);
+        else intentarColocarNuevo(fIdx, target);
+      }
+      // Si sueltas fuera del mar, no pasa nada, se queda donde estaba (antes se bugueaba)
+      return;
+    }
+    // Si fue un click simple (no arrastró), lo tratamos como selección
+    if(desde) seleccionarBarco(bIdx);
+  }
+  document.addEventListener('pointermove', onMove); document.addEventListener('pointerup', onUp);
 }
-function puedeColocar(flotaIdx, pos, o, ignorar){
-  let celdas=celdasPara(flotaIdx,pos,o); if(!celdas) return false;
-  for(let p of celdas){ let v=jugadores[turnoColocar].tablero[p]; if(v!==null){ let bIdx=jugadores[turnoColocar].barcos.findIndex(b=>b.celdas.includes(p)); if(bIdx!==ignorar) return false; } }
-  return true;
-}
-function iniciarArrastre(e, flotaIdx, desdeTablero, barcoIdx){ e.preventDefault(); arrastrando={flotaIdx, desdeTablero, barcoIdx, startX:e.clientX, startY:e.clientY, moved:false}; let fant=document.getElementById('fantasma'); fant.innerHTML=FLOTA[flotaIdx].svg(FLOTA[flotaIdx].color); fant.style.setProperty('--rot', ORIENTS[orient].rot); fant.style.display='block'; fant.style.left=e.clientX+'px'; fant.style.top=e.clientY+'px'; function move(ev){ if(!arrastrando) return; fant.style.left=ev.clientX+'px'; fant.style.top=ev.clientY+'px'; if(Math.abs(ev.clientX-arrastrando.startX)>6||Math.abs(ev.clientY-arrastrando.startY)>6) arrastrando.moved=true; document.querySelectorAll('.cell').forEach(c=>c.classList.remove('dropOk','dropBad')); let el=document.elementFromPoint(ev.clientX,ev.clientY); let celda=el&&el.closest?el.closest('.cell'):null; if(celda && celda.dataset.idx!==undefined){ let pos=parseInt(celda.dataset.idx); let ok=puedeColocar(flotaIdx,pos,orient, arrastrando.desdeTablero?arrastrando.barcoIdx:null); celda.classList.add(ok?'dropOk':'dropBad'); } } function up(ev){ document.removeEventListener('pointermove',move); document.removeEventListener('pointerup',up); fant.style.display='none'; document.querySelectorAll('.cell').forEach(c=>c.classList.remove('dropOk','dropBad')); if(!arrastrando) return; let x=ev.clientX, y=ev.clientY; let el=document.elementFromPoint(x,y); let celda=el&&el.closest?el.closest('.cell'):null; let mov=arrastrando.moved, desde=arrastrando.desdeTablero, bIdx=arrastrando.barcoIdx, fIdx=arrastrando.flotaIdx; arrastrando=null; if(celda && celda.dataset.idx!==undefined && mov){ let pos=parseInt(celda.dataset.idx); if(desde) intentarMover(bIdx,pos); else intentarColocarNuevo(fIdx,pos); } else if(!mov && desde) seleccionarBarco(bIdx); } document.addEventListener('pointermove',move); document.addEventListener('pointerup',up); }
 function intentarColocarNuevo(flotaIdx,pos){ if(jugadores[turnoColocar].barcos.some(b=>b.flotaIdx===flotaIdx)) return; if(!puedeColocar(flotaIdx,pos,orient,null)) return; guardarHistorial(); let celdas=celdasPara(flotaIdx,pos,orient); celdas.forEach(p=>jugadores[turnoColocar].tablero[p]=flotaIdx); jugadores[turnoColocar].barcos.push({nombre:FLOTA[flotaIdx].nombre, flotaIdx, celdas, hundido:false, orient}); sonido("colocar"); seleccionadoIdx=null; window._flotaSel=null; document.getElementById('selTxt').innerText="Ninguno"; renderFlota(); pintarColocar(); actualizarProgreso(); }
-function intentarMover(barcoIdx,pos){ let b=jugadores[turnoColocar].barcos[barcoIdx]; if(!b) return; if(!puedeColocar(b.flotaIdx,pos,orient,barcoIdx)) return; guardarHistorial(); let celdas=celdasPara(b.flotaIdx,pos,orient); b.celdas.forEach(p=>jugadores[turnoColocar].tablero[p]=null); celdas.forEach(p=>jugadores[turnoColocar].tablero[p]=b.flotaIdx); b.celdas=celdas; b.orient=orient; sonido("colocar"); seleccionadoIdx=barcoIdx; renderFlota(); pintarColocar(); }
-function pintarColocar(){ let tab=document.getElementById('tabColocar'); tab.innerHTML=''; for(let i=0;i<100;i++){ let c=document.createElement('div'); let v=jugadores[turnoColocar].tablero[i]; c.className='cell'+(v!==null?' ship':''); c.dataset.idx=i; if(v!==null){ let barco=jugadores[turnoColocar].barcos.find(b=>b.celdas.includes(i)); let bi=jugadores[turnoColocar].barcos.indexOf(barco); if(bi===seleccionadoIdx) c.classList.add('selected'); c.innerHTML=shipCellSVG(v, barco.orient); } c.addEventListener('pointerdown', e=>{ // Si hay barco de flota seleccionado para colocar con toque
-        if(window._flotaSel!==null && window._flotaSel!==undefined && seleccionadoIdx===null){ intentarColocarNuevo(window._flotaSel, i); return; }
-        if(seleccionadoIdx!==null){ let b=jugadores[turnoColocar].barcos[seleccionadoIdx]; if(!b){ seleccionadoIdx=null; return; } let bi=jugadores[turnoColocar].barcos.findIndex(x=>x.celdas.includes(i)); if(bi===seleccionadoIdx){ iniciarArrastre(e,b.flotaIdx,true,seleccionadoIdx); return; } orient=b.orient; setOrient(orient); intentarMover(seleccionadoIdx,i); return; } if(v!==null){ let bi=jugadores[turnoColocar].barcos.findIndex(b=>b.celdas.includes(i)); seleccionarBarco(bi); iniciarArrastre(e,v,true,bi); return; } }); tab.appendChild(c); } document.getElementById('mensaje').innerText=jugadores[turnoColocar].barcos.length+"/5 barcos — "+ORIENTS[orient].name+" — toca / arrastra para editar sin límite"; }
-function girarSeleccionado(){ if(seleccionadoIdx===null){ let nuevo=(orient+1)%4; setOrient(nuevo); return; } let b=jugadores[turnoColocar].barcos[seleccionadoIdx]; if(!b) return; let nuevo=(b.orient+1)%4; let pos=b.celdas[0]; // Buscar sitio donde quepa girado
-    for(let intento=0; intento<6; intento++){ let p=pos+intento; if(puedeColocar(b.flotaIdx,p,nuevo,seleccionadoIdx)){ orient=nuevo; setOrient(nuevo); intentarMover(seleccionadoIdx,p); return; } let p2=pos-intento; if(puedeColocar(b.flotaIdx,p2,nuevo,seleccionadoIdx)){ orient=nuevo; setOrient(nuevo); intentarMover(seleccionadoIdx,p2); return; } } alert("No cabe girado ahí. Muévelo a un sitio con más espacio y gira otra vez."); }
-function quitarSeleccionado(){ if(seleccionadoIdx===null && window._flotaSel===null) return alert("Primero toca un barco colocado"); if(seleccionadoIdx===null) return; guardarHistorial(); let b=jugadores[turnoColocar].barcos[seleccionadoIdx]; b.celdas.forEach(p=>jugadores[turnoColocar].tablero[p]=null); jugadores[turnoColocar].barcos.splice(seleccionadoIdx,1); seleccionadoIdx=null; document.getElementById('selTxt').innerText="Ninguno"; renderFlota(); pintarColocar(); actualizarProgreso(); }
-function limpiarTodo(){ if(!confirm("¿Borrar toda la flota y empezar de 0? Puedes deshacer después si quieres.")) return; guardarHistorial(); jugadores[turnoColocar].tablero=Array(100).fill(null); jugadores[turnoColocar].barcos=[]; seleccionadoIdx=null; renderFlota(); pintarColocar(); actualizarProgreso(); }
+function intentarMover(barcoIdx,pos){ let b=jugadores[turnoColocar].barcos[barcoIdx]; if(!b) return; if(!puedeColocar(b.flotaIdx,pos,orient,barcoIdx)) return; // Si es la misma posición, no hacer nada (antes se quedaba pillado)
+  if(b.celdas[0]===pos && b.orient===orient) return; guardarHistorial(); let celdas=celdasPara(b.flotaIdx,pos,orient); b.celdas.forEach(p=>jugadores[turnoColocar].tablero[p]=null); celdas.forEach(p=>jugadores[turnoColocar].tablero[p]=b.flotaIdx); b.celdas=celdas; b.orient=orient; sonido("colocar"); seleccionadoIdx=barcoIdx; renderFlota(); pintarColocar(); }
+function pintarColocar(){ let tab=document.getElementById('tabColocar'); tab.innerHTML=''; for(let i=0;i<100;i++){ let c=document.createElement('div'); let v=jugadores[turnoColocar].tablero[i]; c.className='cell'+(v!==null?' ship':''); c.dataset.idx=i; if(v!==null){ let barco=jugadores[turnoColocar].barcos.find(b=>b.celdas.includes(i)); let bi=jugadores[turnoColocar].barcos.indexOf(barco); if(bi===seleccionadoIdx) c.classList.add('selected'); c.innerHTML=shipCellSVG(v, barco.orient); } c.addEventListener('pointerdown', e=>{ if(window._flotaSel!==null && window._flotaSel!==undefined && seleccionadoIdx===null){ intentarColocarNuevo(window._flotaSel, i); window._flotaSel=null; return; } if(seleccionadoIdx!==null){ let b=jugadores[turnoColocar].barcos[seleccionadoIdx]; if(!b){ seleccionadoIdx=null; return; } let bi=jugadores[turnoColocar].barcos.findIndex(x=>x.celdas.includes(i)); if(bi===seleccionadoIdx){ orient=b.orient; setOrient(orient); startDrag(e, b.flotaIdx, true, seleccionadoIdx, i); return; } orient=b.orient; setOrient(orient); intentarMover(seleccionadoIdx, i); return; } if(v!==null){ let bi=jugadores[turnoColocar].barcos.findIndex(b=>b.celdas.includes(i)); orient=jugadores[turnoColocar].barcos[bi].orient; setOrient(orient); startDrag(e, v, true, bi, i); return; } }); tab.appendChild(c); } document.getElementById('mensaje').innerText=jugadores[turnoColocar].barcos.length+"/5 barcos — "+ORIENTS[orient].name+" — arrastra para mover, toca para seleccionar"; }
+function girarSeleccionado(){ if(seleccionadoIdx===null){ let nuevo=(orient+1)%4; setOrient(nuevo); return; } let b=jugadores[turnoColocar].barcos[seleccionadoIdx]; if(!b) return; let nuevo=(b.orient+1)%4; let pos=b.celdas[0]; for(let intento=0; intento<6; intento++){ let p=pos+intento; if(puedeColocar(b.flotaIdx,p,nuevo,seleccionadoIdx)){ orient=nuevo; setOrient(nuevo); intentarMover(seleccionadoIdx,p); return; } let p2=pos-intento; if(puedeColocar(b.flotaIdx,p2,nuevo,seleccionadoIdx)){ orient=nuevo; setOrient(nuevo); intentarMover(seleccionadoIdx,p2); return; } } alert("No cabe girado ahí. Muévelo a un sitio con más espacio."); }
+function quitarSeleccionado(){ if(seleccionadoIdx===null) return alert("Primero toca un barco colocado"); guardarHistorial(); let b=jugadores[turnoColocar].barcos[seleccionadoIdx]; b.celdas.forEach(p=>jugadores[turnoColocar].tablero[p]=null); jugadores[turnoColocar].barcos.splice(seleccionadoIdx,1); seleccionadoIdx=null; document.getElementById('selTxt').innerText="Ninguno"; renderFlota(); pintarColocar(); actualizarProgreso(); }
+function limpiarTodo(){ if(!confirm("¿Borrar toda la flota y empezar de 0?")) return; guardarHistorial(); jugadores[turnoColocar].tablero=Array(100).fill(null); jugadores[turnoColocar].barcos=[]; seleccionadoIdx=null; renderFlota(); pintarColocar(); actualizarProgreso(); }
 function colocacionAleatoria(){ guardarHistorial(); jugadores[turnoColocar].tablero=Array(100).fill(null); jugadores[turnoColocar].barcos=[]; FLOTA.forEach((f,idx)=>{ for(let intento=0;intento<400;intento++){ let o=Math.floor(Math.random()*4); let pos=Math.floor(Math.random()*100); if(puedeColocar(idx,pos,o,null)){ let celdas=celdasPara(idx,pos,o); celdas.forEach(p=>jugadores[turnoColocar].tablero[p]=idx); jugadores[turnoColocar].barcos.push({nombre:f.nombre, flotaIdx:idx, celdas, hundido:false, orient:o}); break; } } }); seleccionadoIdx=null; renderFlota(); pintarColocar(); actualizarProgreso(); sonido("colocar"); }
 function confirmarColocacion(){ if(jugadores[turnoColocar].barcos.length<5) return alert("Te faltan barcos: "+jugadores[turnoColocar].barcos.length+"/5"); if(turnoColocar===0){ document.getElementById('colocar').style.display='none'; mostrarTapa(1,"Coloca tu flota, "+nombres[1],()=>mostrarColocar(1)); } else { turnoBatalla=0; document.getElementById('colocar').style.display='none'; mostrarTapa(0,"Empieza la batalla, dispara tú primero",()=>mostrarBatalla()); } }
 function mostrarTapa(idx,texto,cb){ window._cb=cb; document.getElementById('tapa').style.display='block'; document.getElementById('colocar').style.display='none'; document.getElementById('batalla').style.display='none'; document.getElementById('siguienteJugador').innerText=nombres[idx]; document.getElementById('textoTapa').innerText=texto; document.getElementById('turnoTxt').innerText=nombres[idx]; document.getElementById('cardP1').classList.toggle('active', idx===0); document.getElementById('cardP2').classList.toggle('active', idx===1); }
 function mostrarPantalla(){ document.getElementById('tapa').style.display='none'; if(window._cb) window._cb(); }
 function mostrarBatalla(){ document.getElementById('batalla').style.display='block'; document.getElementById('batallaQuien').innerText=nombres[turnoBatalla]; document.getElementById('mensaje').innerText="🎯 "+nombres[turnoBatalla]+", dispara al campo enemigo"; pintarBatalla(); }
-function pintarBatalla(){ let enemigo=jugadores[1-turnoBatalla], yo=jugadores[turnoBatalla]; let tab=document.getElementById('tabAtaque'); tab.innerHTML=''; for(let i=0;i<100;i++){ let c=document.createElement('div'); let disparado=yo.disparos.has(i); let esBarco=enemigo.tablero[i]!==null; let tocado=disparado&&esBarco; let hundido=false; if(tocado){ let b=enemigo.barcos.find(b=>b.celdas.includes(i)); if(b&&b.hundido) hundido=true; } c.className='cell '+(disparado?(tocado?(hundido?' sunk':' hit'):''):''); if(tocado&&hundido) c.innerHTML='<div style="font-size:18px">💀</div><div class="smoke"></div>'; else if(tocado) c.innerHTML='<div class="fire">🔥</div>'; else if(disparado) c.innerHTML='<div>💦</div>'; else c.innerHTML='<div style="width:6px;height:6px;background:rgba(255,255,255,.35);border-radius:50%"></div>'; c.onclick=()=>disparar(i); tab.appendChild(c); } let tab2=document.getElementById('tabPropio'); tab2.innerHTML=''; for(let i=0;i<100;i++){ let c=document.createElement('div'); let v=yo.tablero[i]; let meHanDisparado=enemigo.disparos.has(i); c.className='cell '+(v!==null?(meHanDisparado?' hit':' ship'):(meHanDisparado?'':'') ); if(v!==null){ let barco=yo.barcos.find(b=>b.celdas.includes(i)); c.innerHTML= meHanDisparado ? '<div class="fire">🔥</div>' : shipCellSVG(v, barco.orient); } else if(meHanDisparado) c.innerHTML='<div>💦</div>'; tab2.appendChild(c); } let h0=jugadores[0].barcos.filter(b=>b.hundido).length; let h1=jugadores[1].barcos.filter(b=>b.hundido).length; document.getElementById('puntos1').innerText=h0+" / 5"; document.getElementById('puntos2').innerText=h1+" / 5"; document.getElementById('turnoTxt').innerText=nombres[turnoBatalla]; document.getElementById('cardP1').classList.toggle('active', turnoBatalla===0); document.getElementById('cardP2').classList.toggle('active', turnoBatalla===1); }
+function pintarBatalla(){ let enemigo=jugadores[1-turnoBatalla], yo=jugadores[turnoBatalla]; let tab=document.getElementById('tabAtaque'); tab.innerHTML=''; for(let i=0;i<100;i++){ let c=document.createElement('div'); let disparado=yo.disparos.has(i); let esBarco=enemigo.tablero[i]!==null; let tocado=disparado&&esBarco; let hundido=false; if(tocado){ let b=enemigo.barcos.find(b=>b.celdas.includes(i)); if(b&&b.hundido) hundido=true; } c.className='cell '+(disparado?(tocado?(hundido?' sunk':' hit'):''):''); if(tocado&&hundido) c.innerHTML='<div style="font-size:18px">💀</div><div class="smoke"></div>'; else if(tocado) c.innerHTML='<div class="fire">🔥</div>'; else if(disparado) c.innerHTML='<div>💦</div>'; else c.innerHTML='<div style="width:6px;height:6px;background:rgba(255,255,255,.35);border-radius:50%"></div>'; c.onclick=()=>disparar(i); tab.appendChild(c); } let tab2=document.getElementById('tabPropio'); tab2.innerHTML=''; for(let i=0;i<100;i++){ let c=document.createElement('div'); let v=yo.tablero[i]; let meHanDisparado=enemigo.disparos.has(i); c.className='cell '+(v!==null?(meHanDisparado?' hit':' ship'):''); if(v!==null){ let barco=yo.barcos.find(b=>b.celdas.includes(i)); c.innerHTML= meHanDisparado ? '<div class="fire">🔥</div>' : shipCellSVG(v, barco.orient); } else if(meHanDisparado) c.innerHTML='<div>💦</div>'; tab2.appendChild(c); } let h0=jugadores[0].barcos.filter(b=>b.hundido).length; let h1=jugadores[1].barcos.filter(b=>b.hundido).length; document.getElementById('puntos1').innerText=h0+" / 5"; document.getElementById('puntos2').innerText=h1+" / 5"; document.getElementById('turnoTxt').innerText=nombres[turnoBatalla]; document.getElementById('cardP1').classList.toggle('active', turnoBatalla===0); document.getElementById('cardP2').classList.toggle('active', turnoBatalla===1); }
 function disparar(pos){ let yo=jugadores[turnoBatalla], enemigo=jugadores[1-turnoBatalla]; if(yo.disparos.has(pos)) return alert("Ya disparaste ahí"); sonido("disparo"); totalDisparos[turnoBatalla]++; setTimeout(()=>{ yo.disparos.add(pos); if(enemigo.tablero[pos]!==null){ aciertos[turnoBatalla]++; let barco=enemigo.barcos.find(b=>b.celdas.includes(pos)); let todas=barco.celdas.every(c=>yo.disparos.has(c)); if(todas){ barco.hundido=true; sonido("hundido"); document.getElementById('mensaje').innerText="💥 ¡HUNDIDO! "+barco.nombre+" de "+nombres[1-turnoBatalla]; if(enemigo.barcos.every(b=>b.hundido)){ let prec= totalDisparos[turnoBatalla] ? Math.round(aciertos[turnoBatalla]/totalDisparos[turnoBatalla]*100) : 0; document.getElementById('batalla').style.display='none'; document.getElementById('fin').style.display='block'; document.getElementById('ganadorTxt').innerText="🏆 "+nombres[turnoBatalla]+" ES ALMIRANTE SUPREMO"; document.getElementById('detalleFin').innerText="Has hundido toda la flota enemiga."; document.getElementById('statsFin').innerHTML="📊 Disparos: "+totalDisparos[turnoBatalla]+" • ✅ Aciertos: "+aciertos[turnoBatalla]+" • 🎯 Precisión: "+prec+"%"; return; } alert("💥 ¡HUNDIDO! "+barco.nombre+" hundido. ¡Tira otra vez!"); } else { sonido("tocado"); document.getElementById('mensaje').innerText="🔥 ¡TOCADO!"; alert("🔥 ¡TOCADO! Repites tiro."); } pintarBatalla(); } else { sonido("fallo"); document.getElementById('mensaje').innerText="💦 Agua... Le toca a "+nombres[1-turnoBatalla]; pintarBatalla(); setTimeout(()=>{ turnoBatalla=1-turnoBatalla; pasarTurno(); },700); } },400); }
 function pasarTurno(){ mostrarTapa(turnoBatalla,"Te toca disparar, "+nombres[turnoBatalla],()=>mostrarBatalla()); }
 </script></body></html>
